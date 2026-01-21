@@ -39,11 +39,12 @@ jobs:
           sudo apt-get update -qqy
           sudo apt-get install -qqy openssl rsync sshpass python3-pip python3-pycryptodome
           git clone https://github.com/bkerler/oppo_decrypt.git --depth=1
+          cd /home/runner/work/ofp-decrypter/ofp-decrypter
           printf "Trying to Decrypt QC OFP...\n"
-          python3 ./oppo_decrypt/ofp_qc_extract.py "$OFP_FILE" out 2>/dev/null
+          python3 ./oppo_decrypt/ofp_qc_extract.py CPH*.ofp out 2>/dev/null
           if [[ ! -f out/super.img || ! -f out/system.img ]]; then
             printf "Trying to Decrypt MTK OFP...\n"
-            python3 ./oppo_decrypt/ofp_mtk_decrypt.py "$OFP_FILE" out 2>/dev/null
+            python3 ./oppo_decrypt/ofp_mtk_decrypt.py CPH*.ofp out 2>/dev/null
             if [[ ! -f out/super.img || ! -f out/system.img ]]; then
               printf "OFP Decryption Error\n" && exit 1
             fi
