@@ -37,8 +37,7 @@ jobs:
       - name: Prepare Decrypter and Decrypt OFP
         run: |
           sudo apt-get update -qqy
-          sudo apt-get install -qqy openssl rsync sshpass
-          pip3 install --user pycryptodom
+          sudo apt-get install -qqy openssl rsync sshpass python3-pip python3-pycryptodome
           git clone https://github.com/bkerler/oppo_decrypt.git --depth=1
           printf "Trying to Decrypt QC OFP...\n"
           python3 ./oppo_decrypt/ofp_qc_extract.py "$OFP_FILE" out 2>/dev/null
