@@ -28,8 +28,10 @@ jobs:
 
       - name: Download OFP Firmware
         run: |
-          FILE_ID=$(echo "${{ github.event.inputs.ofp_link }}" | grep -oP '(?<=id=)[^&]+')
-          wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate "https://docs.google.com/uc?export=download&id=${FILE_ID}" -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${FILE_ID}" -O firmware.ofp && rm -rf /tmp/cookies.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y megatools
+          megadl "${{ github.event.inputs.ofp_link }}" --path=.
+          mv *.ofp firmware.ofp || mv *.OFP firmware.ofp
           ls -lh firmware.ofp
           OFPFILE="firmware.ofp"
           echo "OFP_FILE=${OFPFILE}" >> $GITHUB_ENV
