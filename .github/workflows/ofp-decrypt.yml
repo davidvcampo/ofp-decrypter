@@ -31,27 +31,37 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y megatools wget
           echo "Downloading from MEGA..."
-          megadl "${{ github.event.inputs.ofp_link }}" --path=/tmp/
 
-          # Find the downloaded file (MEGA keeps original filename)
-          DOWNLOADED_FILE=$(find /tmp -name "*.ofp" -o -name "*.OFP" | head -n 1)
+          # Download directly to current directory instead of /tmp
+          megadl "${{ github.event.inputs.ofp_link }}" --path=.
+
+          # Find the downloaded file in current directory
+          DOWNLOADED_FILE=$(ls -1 *.ofp *.OFP 2>/dev/null | head -n 1)
 
           if [ -z "$DOWNLOADED_FILE" ]; then
            echo "Error: No OFP file found after download"
+           ls -lah
            exit 1
           fi
 
           echo "Downloaded file: $DOWNLOADED_FILE"
-          cp "$DOWNLOADED_FILE" firmware.ofp
+
+          # Rename to firmware.ofp if needed
+          if [ "$DOWNLOADED_FILE" != "firmware.ofp" ]; then
+           mv "$DOWNLOADED_FILE" firmware.ofp
+          fi
+
           ls -lh firmware.ofp
 
-          # Verify file size (should be > 1GB)
+          # Verify file size
           FILE_SIZE=$(stat -c%s firmware.ofp)
+          echo "File size: ${FILE_SIZE} bytes"
+
           if [ "$FILE_SIZE" -lt 1000000000 ]; then
            echo "Error: Downloaded file is too small (${FILE_SIZE} bytes)"
            exit 1
           fi
-
+          
           echo "Download successful: $(du -h firmware.ofp | cut -f1)"
           OFPFILE="firmware.ofp"
           echo "OFP_FILE=${OFPFILE}" >> $GITHUB_ENV
