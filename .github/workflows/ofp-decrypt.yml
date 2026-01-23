@@ -71,19 +71,50 @@ jobs:
       - name: Prepare Decrypter and Decrypt OFP
         run: |
           sudo apt-get update -qqy
-          sudo apt-get install -qqy openssl rsync sshpass python3-pip python3-pycryptodome
+          sudo apt-get install -qqy openssl rsync sshpass python3-pip python3-pycryptodome unzip
+          
+          # Clone the decrypt tool
           git clone https://github.com/bkerler/oppo_decrypt.git --depth=1
-          ls -lh
-          printf "Trying to Decrypt QC OFP...\n"
-          python3 ./oppo_decrypt/ofp_qc_extract.py firmware.ofp out 2>/dev/null
-          if [[ ! -f out/super.img || ! -f out/system.img ]]; then
-            printf "Trying to Decrypt MTK OFP...\n"
-            python3 ./oppo_decrypt/ofp_mtk_decrypt.py firmware.ofp out 2>/dev/null
-            if [[ ! -f out/super.img || ! -f out/system.img ]]; then
-              printf "OFP Decryption Error\n" && exit 1
-            fi
+
+          # Check file info
+          echo "=== File Information ==="
+          ls -lh firmware.ofp
+          file firmware.ofp
+
+          # Try extracting as a simple archive first (some OFPs are just zips)
+          echo "=== Attempting direct extraction ==="
+          mkdir -p out
+          unzip -l firmware.ofp 2>/dev/null || echo "Not a ZIP file"
+          
+          # Try QC decryption with verbose output
+          echo "=== Trying QC Decryption ==="
+          python3 ./oppo_decrypt/ofp_qc_extract.py firmware.ofp out || {
+           echo "QC decryption failed, trying MTK..."
+          }
+
+          # Check if we got the files
+          if [[ ! -f out/super.img && ! -f out/system.img ]]; then
+           echo "=== Trying MTK Decryption ==="
+           python3 ./oppo_decrypt/ofp_mtk_decrypt.py firmware.ofp out || {
+            echo "MTK decryption also failed"
+           }
           fi
 
+          # Final check
+          echo "=== Checking extracted files ==="
+          ls -lah out/ || true
+
+          if [[ ! -f out/super.img && ! -f out/system.img ]]; then
+           echo "=== DECRYPTION FAILED ==="
+           echo "This OFP may use unsupported encryption or be corrupted"
+           echo "File details:"
+           hexdump -C firmware.ofp | head -20
+           exit 1
+          fi
+
+          echo "=== Decryption successful! ===
+          ls -lh out/
+           
       - name: Compress & Upload Decrypted Zip
         run: |
           zip -r9 Decrypted."${OFPNAME}".zip out/
