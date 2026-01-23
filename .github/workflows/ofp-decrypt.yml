@@ -29,7 +29,7 @@ jobs:
       - name: Download OFP Firmware
         run: |
           sudo apt-get update -qq
-          udo apt-get install -y megatools wget
+          sudo apt-get install -y megatools wget
           echo "Downloading from MEGA..."
           megadl "${{ github.event.inputs.ofp_link }}" --path=/tmp/
 
